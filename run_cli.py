@@ -3,12 +3,13 @@ import sys
 import threading, time, models, os
 from ansio import application_keypad, mouse_input, raw_input
 from ansio.input import InputEvent, get_input_event
-from agent import AgentContext
+from agent import AgentContext, UserMessage
 from python.helpers.print_style import PrintStyle
 from python.helpers.files import read_file
 from python.helpers import files
 import python.helpers.timed_input as timed_input
 from initialize import initialize
+from python.helpers.dotenv import load_dotenv
 
 
 context: AgentContext = None # type: ignore
@@ -50,7 +51,7 @@ async def chat(context: AgentContext):
         if user_input.lower() == 'e': break
 
         # send message to agent0, 
-        assistant_response = await context.communicate(user_input).result()
+        assistant_response = await context.communicate(UserMessage(user_input, [])).result()
         
         # print agent0 response
         PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{context.agent0.agent_name}: reponse:")        
@@ -68,7 +69,7 @@ def intervention():
         PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
         
         if user_input.lower() == 'e': os._exit(0) # exit the conversation when the user types 'exit'
-        if user_input: context.streaming_agent.intervention_message = user_input # set intervention message if non-empty
+        if user_input: context.streaming_agent.intervention = UserMessage(user_input, []) # set intervention message if non-empty
         context.paused = False # continue agent streaming 
     
 
@@ -93,8 +94,12 @@ def capture_keys():
 def timeout_input(prompt, timeout=10):
     return timed_input.timeout_input(prompt=prompt, timeout=timeout)
 
-if __name__ == "__main__":
-    print("Initializing framework...")
+def run():
+    global context
+    PrintStyle.standard("Initializing framework...")
+
+    #load env vars
+    load_dotenv()
 
     # initialize context
     config = initialize()
@@ -105,3 +110,7 @@ if __name__ == "__main__":
 
     #start the chat
     asyncio.run(chat(context))
+
+if __name__ == "__main__":
+    PrintStyle.standard("\n\n!!! run_cli.py is now discontinued. run_ui.py serves as both UI and API endpoint !!!\n\n")
+    run()
